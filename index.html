@@ -1,0 +1,1165 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>外卖点餐 · 低保真原型</title>
+<style>
+  :root{
+    --ink:#232323; --mid:#6b6b6b; --light:#9a9a9a;
+    --line:#cfcfcc; --soft:#f4f4f1; --soft2:#ecece8;
+    --page:#e7e7e3; --badge:#9a2b2b; --ok:#2f5d3a;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0}
+  body{
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Microsoft YaHei","PingFang SC",sans-serif;
+    background:var(--page); color:var(--ink);
+    -webkit-font-smoothing:antialiased;
+  }
+  button{font-family:inherit;cursor:pointer;border:0;background:none;color:inherit;padding:0}
+  input,select,textarea{font-family:inherit;color:var(--ink)}
+  .stage{display:flex;gap:32px;justify-content:center;align-items:flex-start;padding:28px 24px 40px;min-height:100vh}
+
+  /* ================= 侧栏 ================= */
+  .side{width:320px;flex:0 0 auto;position:sticky;top:24px}
+  .side h1{font-size:22px;margin:0 0 6px;letter-spacing:.5px}
+  .side h1 span{display:block;font-size:12px;font-weight:400;color:var(--mid);letter-spacing:2px;margin-top:4px}
+  .side-desc{font-size:12px;color:var(--mid);margin:0 0 14px;line-height:1.6}
+  .switch{display:flex;align-items:center;gap:8px;font-size:13px;background:#fff;border:1px solid var(--line);border-radius:8px;padding:9px 12px;margin-bottom:14px;cursor:pointer}
+  .switch input{accent-color:#222;width:15px;height:15px}
+  .kplist{list-style:none;margin:0 0 16px;padding:0;background:#fff;border:1px solid var(--line);border-radius:10px;overflow:hidden}
+  .kplist li{display:flex;gap:10px;padding:9px 12px;border-bottom:1px solid var(--soft2);font-size:12px;align-items:baseline}
+  .kplist li:last-child{border-bottom:0}
+  .kplist b{flex:0 0 86px;font-size:12px}
+  .kplist span{color:var(--mid);line-height:1.5}
+  .monitor{background:#fff;border:1px solid var(--line);border-radius:10px;padding:10px 12px 12px;margin-bottom:14px}
+  .monitor h2{font-size:12px;margin:0 0 8px;color:var(--mid);font-weight:600;letter-spacing:1px}
+  .monitor table{width:100%;border-collapse:collapse;font-size:12px}
+  .monitor td{padding:3px 0;vertical-align:top}
+  .monitor td:first-child{color:var(--mid);width:96px}
+  .monitor td:last-child{text-align:right;font-family:ui-monospace,Consolas,monospace;font-size:11.5px}
+  .hint{font-size:11px;color:var(--light);line-height:1.7;margin:0}
+
+  /* ================= 手机 ================= */
+  .device{
+    width:375px;height:780px;flex:0 0 auto;position:relative;overflow:hidden;
+    background:#fff;border:10px solid #1b1b1b;border-radius:38px;
+    box-shadow:0 24px 60px rgba(0,0,0,.28);
+  }
+  .app{position:absolute;inset:0;background:#fff}
+  .screen{position:absolute;inset:0;display:none;flex-direction:column;background:#fff}
+  .screen.active{display:flex}
+
+  .statusbar{height:26px;flex:0 0 auto;display:flex;justify-content:space-between;align-items:center;padding:0 20px;font-size:10.5px;color:#555}
+  .statusbar .right{letter-spacing:1px}
+
+  /* ---------- 首页 ---------- */
+  .home-head{flex:0 0 auto;display:flex;align-items:center;justify-content:space-between;padding:2px 16px 6px}
+  .loc{font-size:12.5px;color:var(--mid)}
+  .loc b{color:var(--ink);font-weight:600}
+  .loc .caret{font-size:9px;margin-left:2px}
+  .avatar{width:26px;height:26px;border-radius:50%;border:1px solid var(--line);background:var(--soft);display:flex;align-items:center;justify-content:center;font-size:11px;color:var(--mid)}
+  .search{display:flex;align-items:center;flex:0 0 auto;margin:2px 16px 10px;background:var(--soft);border:1px solid var(--line);border-radius:18px;height:34px;padding:0 12px;gap:8px}
+  .search input{flex:1;border:0;background:transparent;font-size:12.5px;outline:none;min-width:0}
+  .search input::placeholder{color:var(--light)}
+  .search-btn{font-size:11px;color:var(--mid);border-left:1px solid var(--line);padding-left:10px}
+
+  .scroll{flex:1;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch}
+  .home-scroll{padding-bottom:74px}
+  .scroll::-webkit-scrollbar{width:0}
+
+  .carousel{position:relative;margin:4px 16px 0;height:140px;border:1px solid var(--line);border-radius:6px;overflow:hidden;background:var(--soft2)}
+  .slides{display:flex;width:300%;height:100%;transition:transform .35s ease}
+  .slide{width:33.3333%;height:100%;flex:0 0 33.3333%;display:flex;align-items:center;justify-content:center;font-size:13px;color:#7d7d7a}
+  .ph{background-color:#f0f0ed;background-image:repeating-linear-gradient(45deg,#e8e8e4 0 7px,#f0f0ed 7px 14px);border:1px solid #dededa;color:#8b8b87;display:flex;align-items:center;justify-content:center;font-size:11.5px;text-align:center;padding:4px}
+  .c-arrow{position:absolute;top:50%;transform:translateY(-50%);width:24px;height:24px;border-radius:50%;background:rgba(255,255,255,.75);border:1px solid var(--line);color:#555;font-size:14px;line-height:1;z-index:6;display:flex;align-items:center;justify-content:center}
+  .c-arrow.prev{left:6px}.c-arrow.next{right:6px}
+  .dots{position:absolute;bottom:8px;left:0;right:0;display:flex;gap:5px;justify-content:center;z-index:6}
+  .dot{width:6px;height:6px;border-radius:50%;background:#fff;border:1px solid #999;padding:0}
+  .dot.on{background:#222;border-color:#222}
+  .hotspot{position:absolute;inset:0;border:2px dashed rgba(154,43,43,.75);background:transparent;z-index:5;display:block}
+  .hs-label{position:absolute;left:8px;top:8px;font-size:10px;color:#9a2b2b;background:rgba(255,255,255,.85);padding:1px 6px;border-radius:3px}
+
+  .cats{display:grid;grid-template-columns:repeat(5,1fr);gap:4px;margin:14px 16px 0;background:#fff;border:1px solid var(--line);border-radius:8px;padding:12px 6px}
+  .cat{display:flex;flex-direction:column;align-items:center;gap:6px;font-size:11px;color:var(--mid);padding:2px 0;border-radius:6px}
+  .cat-icon{width:40px;height:40px;border-radius:50%;background:var(--soft);border:1px solid var(--line);display:flex;align-items:center;justify-content:center;font-size:14px;color:#666}
+  .cat.on .cat-icon{background:#262626;border-color:#262626;color:#fff}
+  .cat.on{color:var(--ink);font-weight:600}
+
+  .section-head{display:flex;align-items:center;justify-content:space-between;margin:16px 16px 8px}
+  .section-head h3{font-size:14px;margin:0}
+  .select-wrap{position:relative}
+  .k-select{border:1px solid var(--line);border-radius:14px;height:26px;font-size:11px;padding:0 24px 0 10px;background:#fff;appearance:none;outline:none;color:var(--mid)}
+  .select-wrap::after{content:"▾";position:absolute;right:9px;top:5px;font-size:10px;color:var(--light);pointer-events:none}
+
+  #storeList{margin:0 16px}
+  .store-card{display:flex;gap:10px;width:100%;text-align:left;background:#fff;border:1px solid var(--line);border-radius:8px;padding:10px;margin-bottom:10px;position:relative}
+  .store-img{width:76px;height:76px;flex:0 0 auto;border-radius:4px;font-size:10px}
+  .store-info{min-width:0;flex:1;display:flex;flex-direction:column;justify-content:center;gap:3px}
+  .store-name{font-size:14px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .store-line{font-size:11px;color:var(--mid);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .store-line .rating{color:var(--ink);font-weight:600}
+  .store-line.muted{color:var(--light)}
+  .tag{position:absolute;right:10px;top:10px;font-size:9px;color:#9a2b2b;border:1px solid rgba(154,43,43,.5);border-radius:3px;padding:1px 4px;background:#fff}
+  .empty{font-size:12px;color:var(--light);text-align:center;padding:34px 0}
+
+  /* ---------- 通用导航 / 按钮 ---------- */
+  .nav{flex:0 0 auto;height:46px;display:flex;align-items:center;gap:8px;padding:0 10px;border-bottom:1px solid var(--soft2)}
+  .nav.plain{justify-content:center}
+  .back{width:32px;height:32px;font-size:22px;line-height:1;color:#333;display:flex;align-items:center;justify-content:center}
+  .nav-title{font-size:14px;font-weight:600;flex:1;text-align:center;margin-right:32px}
+  .nav-sub{font-size:11px;color:var(--mid);margin-right:6px}
+  .nav.plain .nav-title{margin:0}
+
+  /* ---------- 店铺页 ---------- */
+  .store-scroll{padding-bottom:88px}
+  .store-hero{margin:12px 16px 0;height:104px;border-radius:6px;font-size:11px}
+  .store-meta{margin:10px 16px 0}
+  .store-meta b{font-size:16px}
+  .stars{font-size:11px;color:#555;margin:3px 0 4px;letter-spacing:1px}
+  .meta-line{display:flex;gap:12px;font-size:11px;color:var(--mid)}
+  .menu-tabs{display:flex;gap:4px;margin:14px 16px 4px;border-bottom:1px solid var(--soft2);overflow-x:auto}
+  .menu-tab{font-size:12px;color:var(--mid);padding:7px 11px;border-bottom:2px solid transparent;white-space:nowrap}
+  .menu-tab.on{color:var(--ink);font-weight:600;border-bottom-color:#222}
+  .menu-item{display:flex;gap:10px;padding:10px 16px;border-bottom:1px solid var(--soft2);width:100%;text-align:left;position:relative}
+  .menu-img{width:68px;height:68px;flex:0 0 auto;border-radius:5px;font-size:10px}
+  .menu-info{flex:1;min-width:0;display:flex;flex-direction:column;gap:4px;justify-content:center}
+  .menu-name{font-size:13.5px;font-weight:600}
+  .menu-desc{font-size:11px;color:var(--mid);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .menu-sold{font-size:10.5px;color:var(--light)}
+  .menu-price-row{display:flex;align-items:center;justify-content:space-between;margin-top:2px}
+  .price{font-size:14px;font-weight:600}
+  .plus{width:24px;height:24px;border-radius:50%;background:#222;color:#fff;font-size:15px;line-height:1;display:flex;align-items:center;justify-content:center;flex:0 0 auto}
+
+  /* ---------- 购物车 ---------- */
+  .cartbar{position:absolute;left:0;right:0;bottom:0;height:56px;background:#1d1d1d;color:#fff;display:flex;align-items:center;gap:10px;padding:0 12px;z-index:15}
+  .cart-left{flex:1;display:flex;align-items:baseline;gap:8px;color:#fff;text-align:left;position:relative;padding-left:30px}
+  .cart-icon{position:absolute;left:2px;top:-12px;width:32px;height:32px;border-radius:50%;background:#fff;color:#222;font-size:11px;display:flex;align-items:center;justify-content:center;border:2px solid #1d1d1d}
+  .cart-count{position:absolute;left:26px;top:-18px;min-width:16px;height:16px;border-radius:8px;background:#9a2b2b;color:#fff;font-size:10px;display:flex;align-items:center;justify-content:center;padding:0 4px}
+  .cart-total{font-size:15px;font-weight:600}
+  .cart-tip{font-size:10.5px;color:#a9a9a9}
+  .checkout-btn{background:#fff;color:#111;height:38px;border-radius:19px;padding:0 20px;font-size:13px;font-weight:600}
+  .checkout-btn.disabled{opacity:.45}
+
+  .cart-drawer{position:absolute;left:0;right:0;bottom:56px;background:#fff;border-top:1px solid var(--line);max-height:0;overflow:hidden;transition:max-height .25s ease;z-index:14}
+  .cart-drawer.open{max-height:306px;overflow:auto}
+  .drawer-head{display:flex;justify-content:space-between;align-items:center;padding:10px 16px;font-size:12px;border-bottom:1px solid var(--soft2)}
+  .drawer-head button{font-size:11px;color:var(--mid)}
+  .drawer-list{padding:2px 16px 10px}
+  .drawer-item{display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px dashed var(--soft2)}
+  .di-info{flex:1;min-width:0}
+  .di-name{font-size:12px}
+  .di-spec{font-size:10.5px;color:var(--light)}
+  .di-price{font-size:12px;font-weight:600;margin-right:4px}
+  .qty-mini{display:flex;align-items:center;gap:7px}
+  .qty-mini button{width:20px;height:20px;border:1px solid var(--line);border-radius:50%;font-size:12px;line-height:1;color:#444}
+  .qty-mini span{font-size:11.5px;min-width:12px;text-align:center}
+
+  /* ---------- 规格弹层 ---------- */
+  .mask{position:absolute;inset:0;background:rgba(0,0,0,.32);display:none;align-items:flex-end;z-index:40}
+  .mask.show{display:flex}
+  .spec-sheet{width:100%;background:#fff;border-radius:16px 16px 0 0;padding:16px 16px 18px;position:relative;max-height:88%;overflow:auto;animation:up .22s ease}
+  @keyframes up{from{transform:translateY(40px);opacity:.5}to{transform:none;opacity:1}}
+  .spec-sheet .x{position:absolute;right:10px;top:6px;width:28px;height:28px;font-size:20px;color:#777}
+  .spec-name{font-size:16px;font-weight:600;padding-right:30px}
+  .spec-desc{font-size:11px;color:var(--mid);margin:4px 0 12px}
+  .spec-group{margin-bottom:12px}
+  .group-label{font-size:11.5px;color:var(--mid);margin-bottom:7px}
+  .group-label i{font-style:normal;font-size:9.5px;color:var(--light);border:1px solid var(--line);border-radius:3px;padding:0 4px;margin-left:4px}
+  .opts{display:flex;flex-wrap:wrap;gap:8px}
+  .pill{border:1px solid var(--line);border-radius:16px;padding:5px 12px;font-size:11.5px;background:#fff;color:#555}
+  .pill.on{background:#222;border-color:#222;color:#fff}
+  .qty-row{display:flex;justify-content:space-between;align-items:center;font-size:12px;margin:6px 0 14px}
+  .stepper{display:flex;align-items:center;border:1px solid var(--line);border-radius:14px;overflow:hidden}
+  .stepper button{width:28px;height:26px;font-size:14px;color:#333;background:#fafaf8}
+  .stepper input{width:34px;height:26px;border:0;text-align:center;font-size:12px;outline:none;background:#fff}
+  .spec-foot{display:flex;justify-content:space-between;align-items:center;gap:12px;border-top:1px solid var(--soft2);padding-top:12px}
+  .spec-total{font-size:12px;color:var(--mid)}
+  .spec-total b{font-size:18px;color:var(--ink)}
+  .add-btn{background:#222;color:#fff;height:40px;border-radius:20px;padding:0 24px;font-size:13px;font-weight:600}
+
+  /* ---------- 订单确认 ---------- */
+  .checkout-scroll{padding:8px 0 26px;background:#f6f6f3}
+  .card{background:#fff;border:1px solid var(--line);border-radius:8px;margin:10px 16px;padding:11px 12px;position:relative}
+  .card h4{font-size:12.5px;margin:0 0 8px}
+  .field{display:flex;align-items:center;gap:8px;padding:4px 0}
+  .field label{flex:0 0 62px;font-size:11.5px;color:var(--mid)}
+  .field input,.field select{flex:1;height:30px;border:1px solid var(--line);border-radius:5px;padding:0 8px;font-size:12px;background:#fff;outline:none;min-width:0}
+  .field input:focus,.field select:focus{border-color:#888}
+  .err{display:none;font-size:10.5px;color:#9a2b2b;margin-top:6px;line-height:1.5}
+  .err.show{display:block}
+  .inline-frame{width:100%;height:132px;border:1px dashed var(--line);border-radius:5px;display:block;background:#fafaf8}
+  .radio,.check{display:flex;align-items:center;gap:8px;font-size:12px;padding:5px 0;cursor:pointer}
+  .radio input,.check input{accent-color:#222;width:14px;height:14px;margin:0}
+  textarea{width:100%;border:1px solid var(--line);border-radius:5px;padding:7px 8px;font-size:12px;resize:none;outline:none;margin-top:4px}
+  .fee{display:flex;justify-content:space-between;font-size:11.5px;color:var(--mid);padding:3px 0}
+  .fee b{color:var(--ink);font-weight:500;font-family:ui-monospace,Consolas,monospace}
+  .fee.total{border-top:1px solid var(--soft2);margin-top:6px;padding-top:8px;font-size:13px;color:var(--ink)}
+  .fee.total b{font-size:16px;font-weight:700}
+  .fee-tip{font-size:10.5px;color:#9a2b2b;margin-top:6px;line-height:1.5}
+  .submit-btn{display:block;width:calc(100% - 32px);margin:16px;height:44px;background:#222;color:#fff;border-radius:22px;font-size:14px;font-weight:600}
+
+  /* ---------- 成功页 ---------- */
+  .success-wrap{flex:1;display:flex;flex-direction:column;align-items:center;padding:52px 24px 24px}
+  .success-icon{width:56px;height:56px;border-radius:50%;border:2px solid #222;display:flex;align-items:center;justify-content:center;font-size:26px;margin-bottom:14px}
+  .success-wrap h2{font-size:19px;margin:0 0 6px}
+  .success-sub{font-size:11.5px;color:var(--mid);margin:0 0 22px;text-align:center;line-height:1.6}
+  .success-card{width:100%;background:#f7f7f4;border:1px solid var(--line);border-radius:8px;padding:12px;margin-bottom:22px}
+  .success-card .fee b{font-weight:600}
+
+  /* ---------- 订单 / 我的 ---------- */
+  .orders-list{padding:14px 16px}
+  .order-card{border:1px solid var(--line);border-radius:8px;padding:12px;margin-bottom:12px}
+  .order-head{display:flex;justify-content:space-between;font-size:10.5px;margin-bottom:8px}
+  .order-head .muted{color:var(--light)}
+  .order-state{color:#2f5d3a;border:1px solid rgba(47,93,58,.4);border-radius:3px;padding:0 4px}
+  .order-shop{font-size:13.5px;font-weight:600;margin-bottom:6px}
+  .order-line{font-size:11.5px;color:var(--mid);margin-bottom:4px}
+  .order-addr{font-size:10.5px}
+  .profile{padding:26px 16px 10px;display:flex;align-items:center;gap:12px}
+  .profile .big-avatar{width:52px;height:52px;border-radius:50%;border:1px solid var(--line);background:var(--soft);display:flex;align-items:center;justify-content:center;font-size:16px;color:var(--mid)}
+  .profile b{font-size:15px;display:block}
+  .profile span{font-size:11px;color:var(--light)}
+  .menu-list-simple{margin:16px;border:1px solid var(--line);border-radius:8px;overflow:hidden;background:#fff}
+  .menu-row{display:flex;justify-content:space-between;padding:12px;font-size:12.5px;border-bottom:1px solid var(--soft2)}
+  .menu-row:last-child{border-bottom:0}
+  .menu-row span{color:var(--mid)}
+
+  /* ---------- 底部标签栏 ---------- */
+  .tabbar{position:absolute;left:0;right:0;bottom:0;height:56px;background:#fff;border-top:1px solid var(--line);display:flex;z-index:30}
+  .tab{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;font-size:10.5px;color:var(--light)}
+  .tab .ticon{font-size:16px;line-height:1}
+  .tab.active{color:var(--ink);font-weight:600}
+
+  /* ---------- Toast ---------- */
+  .toast{position:absolute;left:50%;bottom:104px;transform:translate(-50%,8px);background:rgba(20,20,20,.86);color:#fff;font-size:11.5px;line-height:1.5;padding:8px 14px;border-radius:16px;max-width:280px;text-align:center;opacity:0;pointer-events:none;transition:opacity .2s,transform .2s;z-index:100}
+  .toast.show{opacity:1;transform:translate(-50%,0)}
+
+  /* ---------- 知识点标注 ---------- */
+  .kp{position:relative}
+  .kp-badge{display:none;position:absolute;top:-9px;right:6px;z-index:50;background:var(--badge);color:#fff;font-size:9.5px;line-height:1.5;padding:1px 6px;border-radius:8px;white-space:nowrap;font-weight:500}
+  body.show-kp .kp-badge{display:inline-block}
+  body.show-kp .kp{outline:1.5px dashed var(--badge);outline-offset:2px;border-radius:4px}
+  .carousel .kp-badge,.hotspot .kp-badge{top:6px;right:6px}
+  .carousel .kp-badge{background:rgba(154,43,43,.92)}
+  .hotspot .kp-badge{top:auto;bottom:8px;right:8px;background:rgba(154,43,43,.92)}
+  .search .kp-badge{top:-14px;right:54px}
+  .section-head .kp-badge{top:-16px;right:0}
+  #storeList > .kp-badge,#menuList > .kp-badge{top:-10px;right:0}
+  .hint-inline{font-size:10px;color:var(--light);margin-left:4px}
+
+  @media (max-width:1100px){
+    .stage{flex-direction:column;align-items:center}
+    .side{position:static;width:375px;max-width:100%}
+  }
+</style>
+</head>
+<body class="show-kp">
+<div class="stage">
+
+  <aside class="side">
+    <h1>外卖点餐<span>LOW-FIDELITY PROTOTYPE · 375×812</span></h1>
+    <p class="side-desc">可点击低保真原型，对应作业的 10 个 Axure 知识点。右侧手机内可直接操作，左侧"变量监视器"实时显示全局变量。</p>
+
+    <label class="switch"><input type="checkbox" id="kpToggle" checked> 显示知识点标注</label>
+
+    <ol class="kplist">
+      <li><b>① 图片轮播</b><span>首页 3 张图自动轮播 + 圆点/箭头切换</span></li>
+      <li><b>② 热区</b><span>轮播图上的热区（领券）、分类入口</span></li>
+      <li><b>③ 文本框/下拉框</b><span>搜索框、订单页姓名/电话、地址下拉</span></li>
+      <li><b>④ 单选/复选</b><span>规格单选、加料复选、支付单选、餐具复选</span></li>
+      <li><b>⑤ 动态面板</b><span>轮播面板、购物车抽屉、规格弹窗</span></li>
+      <li><b>⑥ 中继器</b><span>店铺列表、商品列表、分类筛选与排序</span></li>
+      <li><b>⑦ 内联框架</b><span>订单页"配送范围"地图</span></li>
+      <li><b>⑧ 动作/情形交互</b><span>加购、结算校验、提交校验、超范围提示</span></li>
+      <li><b>⑨ 变量</b><span>全局购物车变量 + 交互内局部变量（监视器）</span></li>
+      <li><b>⑩ 函数/表达式</b><span>满减、配送费、合计、随机订单号、字符串长度</span></li>
+    </ol>
+
+    <div class="monitor">
+      <h2>变量监视器</h2>
+      <table>
+        <tr><td>CartCount</td><td id="mCount">0</td></tr>
+        <tr><td>CartTotal</td><td id="mTotal">¥0.00</td></tr>
+        <tr><td>FilterCat</td><td id="mFilter">全部</td></tr>
+        <tr><td>Discount</td><td id="mDiscount">¥0.00</td></tr>
+        <tr><td>DeliveryFee</td><td id="mDelivery">¥0.00</td></tr>
+        <tr><td>应付合计</td><td id="mPayable">¥0.00</td></tr>
+        <tr><td>OrderNo</td><td id="mOrder">—</td></tr>
+      </table>
+    </div>
+
+    <p class="hint">操作路径：轮播热区领券 → 选分类 → 点店铺 → 加购（规格/加料/数量）→ 购物车 → 去结算 → 填表 → 提交订单。</p>
+  </aside>
+
+  <div class="device">
+    <div class="app" id="app">
+
+      <!-- ================= 首页 ================= -->
+      <section class="screen active" id="s-home">
+        <div class="statusbar"><span>9:41</span><span class="right">5G ▮▮▮ ▮</span></div>
+
+        <div class="home-head">
+          <div class="loc">收货地址：<b id="homeAddr">XX大学东门</b><span class="caret">▾</span></div>
+          <div class="avatar">我</div>
+        </div>
+
+        <label class="search kp" data-kp="3">
+          <span class="kp-badge">③ 文本框</span>
+          <input id="searchInput" placeholder="搜索店铺 / 商品">
+          <span class="search-btn" id="searchBtn">搜索</span>
+        </label>
+
+        <div class="scroll home-scroll">
+          <div class="carousel kp" data-kp="1">
+            <span class="kp-badge">① 图片轮播 · ⑤动态面板</span>
+            <div class="slides" id="slides">
+              <div class="slide ph">轮播图 1 · 满30减5</div>
+              <div class="slide ph">轮播图 2 · 新客立减 8 元</div>
+              <div class="slide ph">轮播图 3 · 配送费减免</div>
+            </div>
+            <button class="c-arrow prev" id="cPrev" aria-label="上一张">‹</button>
+            <button class="c-arrow next" id="cNext" aria-label="下一张">›</button>
+            <div class="dots" id="dots"></div>
+            <button class="hotspot kp" data-kp="2" id="hotspot" aria-label="热区领券">
+              <span class="kp-badge">② 热区</span>
+              <span class="hs-label">热区：点击领券</span>
+            </button>
+          </div>
+
+          <div class="cats kp" data-kp="2">
+            <span class="kp-badge">② 热区 / 分类入口</span>
+            <div style="display:contents" id="cats"></div>
+          </div>
+
+          <div class="section-head">
+            <h3>附近店铺</h3>
+            <span class="select-wrap kp" data-kp="3">
+              <span class="kp-badge">③ 下拉列表框</span>
+              <select class="k-select" id="sortSelect">
+                <option>综合排序</option>
+                <option>评分最高</option>
+                <option>配送最快</option>
+              </select>
+            </span>
+          </div>
+
+          <div id="storeList" class="kp" data-kp="6">
+            <span class="kp-badge">⑥ 中继器 · 店铺列表</span>
+          </div>
+        </div>
+
+        <nav class="tabbar" id="tabbar">
+          <button class="tab active" data-go="home"><span class="ticon">▢</span>首页</button>
+          <button class="tab" data-go="orders"><span class="ticon">≡</span>订单</button>
+          <button class="tab" data-go="mine"><span class="ticon">☺</span>我的</button>
+        </nav>
+      </section>
+
+      <!-- ================= 店铺点餐 ================= -->
+      <section class="screen" id="s-store">
+        <div class="statusbar"><span>9:41</span><span class="right">5G ▮▮▮ ▮</span></div>
+        <header class="nav">
+          <button class="back" data-back="home">‹</button>
+          <div class="nav-title" id="storeName">老王牛肉面</div>
+          <span class="nav-sub" id="storeRating">4.8 分</span>
+        </header>
+
+        <div class="scroll store-scroll">
+          <div class="store-hero ph">店铺头图（占位）</div>
+          <div class="store-meta">
+            <b id="storeName2">老王牛肉面</b>
+            <div class="stars" id="storeStars">★★★★★</div>
+            <div class="meta-line">
+              <span id="storeMonth">月售 1280</span>
+              <span id="storeTime">约 25 分钟</span>
+              <span id="storeMin">起送 ¥20.00</span>
+            </div>
+          </div>
+
+          <div class="menu-tabs" id="menuTabs"></div>
+
+          <div id="menuList" class="menu-list kp" data-kp="6">
+            <span class="kp-badge">⑥ 中继器 · 商品列表</span>
+          </div>
+        </div>
+
+        <div class="cartbar kp" data-kp="5">
+          <span class="kp-badge">⑤ 动态面板（收起/展开）</span>
+          <button class="cart-left" id="cartToggle">
+            <span class="cart-icon">车</span>
+            <span class="cart-count" id="cartCount">0</span>
+            <span class="cart-total" id="cartTotal">¥0.00</span>
+            <span class="cart-tip" id="cartTip">未选购商品</span>
+          </button>
+          <button class="checkout-btn disabled" id="goCheckout">去结算</button>
+        </div>
+
+        <div class="cart-drawer" id="cartDrawer">
+          <div class="drawer-head"><b>已选商品</b><button id="clearCart">清空</button></div>
+          <div class="drawer-list" id="drawerList"></div>
+        </div>
+
+        <div class="mask" id="specMask">
+          <div class="spec-sheet" id="specSheet">
+            <button class="x" id="specClose">×</button>
+            <div class="spec-name" id="specName"></div>
+            <div class="spec-desc" id="specDesc"></div>
+
+            <div class="spec-group">
+              <div class="group-label">规格 <i>单选按钮</i></div>
+              <div class="opts" id="specOpts"></div>
+            </div>
+
+            <div class="spec-group">
+              <div class="group-label">加料 <i>复选按钮</i></div>
+              <div class="opts" id="toppingOpts"></div>
+            </div>
+
+            <div class="qty-row">
+              <span>数量</span>
+              <div class="stepper">
+                <button id="qMinus">−</button>
+                <input id="qty" value="1" readonly>
+                <button id="qPlus">＋</button>
+              </div>
+            </div>
+
+            <div class="spec-foot">
+              <div class="spec-total">小计 <b>¥<span id="specTotal">0.00</span></b></div>
+              <button class="add-btn" id="addCart">加入购物车</button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ================= 订单确认 ================= -->
+      <section class="screen" id="s-checkout">
+        <div class="statusbar"><span>9:41</span><span class="right">5G ▮▮▮ ▮</span></div>
+        <header class="nav">
+          <button class="back" data-back="store">‹</button>
+          <div class="nav-title">确认订单</div>
+        </header>
+
+        <div class="scroll checkout-scroll">
+          <div class="card kp" data-kp="3">
+            <span class="kp-badge">③ 文本框 / 下拉列表框</span>
+            <h4>收货信息</h4>
+            <div class="field"><label>姓名</label><input id="fName" placeholder="请输入收货人姓名"></div>
+            <div class="field"><label>手机号</label><input id="fPhone" maxlength="11" inputmode="numeric" placeholder="11 位手机号"></div>
+            <div class="field">
+              <label>收货地址</label>
+              <select id="fAddr">
+                <option value="">请选择</option>
+                <option>XX大学东门</option>
+                <option>西区宿舍 3 号楼</option>
+                <option>图书馆北门</option>
+                <option>校外 · 2 公里外</option>
+              </select>
+            </div>
+            <div class="field"><label>详细地址</label><input id="fDetail" placeholder="楼栋 / 门牌号"></div>
+            <div class="err" id="formErr"></div>
+          </div>
+
+          <div class="card kp" data-kp="7">
+            <span class="kp-badge">⑦ 内联框架</span>
+            <h4>配送范围</h4>
+            <iframe id="mapFrame" class="inline-frame" title="配送范围示意"></iframe>
+          </div>
+
+          <div class="card kp" data-kp="4">
+            <span class="kp-badge">④ 单选按钮组</span>
+            <h4>支付方式</h4>
+            <label class="radio"><input type="radio" name="pay" value="微信支付"><span>微信支付</span></label>
+            <label class="radio"><input type="radio" name="pay" value="支付宝"><span>支付宝</span></label>
+            <label class="radio"><input type="radio" name="pay" value="银行卡"><span>银行卡</span></label>
+          </div>
+
+          <div class="card kp" data-kp="4">
+            <span class="kp-badge">④ 复选按钮</span>
+            <h4>其他</h4>
+            <label class="check"><input type="checkbox" id="fTableware"><span>需要餐具</span></label>
+            <textarea id="fNote" rows="2" placeholder="备注：口味、偏好等"></textarea>
+          </div>
+
+          <div class="card kp" data-kp="10">
+            <span class="kp-badge">⑩ 函数 / 表达式</span>
+            <h4>费用明细</h4>
+            <div class="fee"><span>商品金额</span><b id="feeGoods">¥0.00</b></div>
+            <div class="fee"><span>满 30 减 5</span><b id="feeDiscount">¥0.00</b></div>
+            <div class="fee"><span>配送费</span><b id="feeDelivery">¥0.00</b></div>
+            <div class="fee total"><span>合计</span><b id="feeTotal">¥0.00</b></div>
+            <div class="fee-tip" id="feeTip"></div>
+          </div>
+
+          <button class="submit-btn" id="submitOrder">提交订单</button>
+        </div>
+      </section>
+
+      <!-- ================= 下单成功 ================= -->
+      <section class="screen" id="s-success">
+        <div class="statusbar"><span>9:41</span><span class="right">5G ▮▮▮ ▮</span></div>
+        <div class="success-wrap">
+          <div class="success-icon">✓</div>
+          <h2>下单成功</h2>
+          <p class="success-sub" id="successSub">支付成功，商家正在备餐</p>
+          <div class="success-card">
+            <div class="fee"><span>订单号</span><b id="successNo">WM0000</b></div>
+            <div class="fee"><span>实付金额</span><b id="successAmount">¥0.00</b></div>
+            <div class="fee"><span>配送地址</span><b id="successAddr">—</b></div>
+            <div class="fee"><span>预计送达</span><b>25–35 分钟</b></div>
+          </div>
+          <button class="submit-btn" id="backHome">返回首页</button>
+        </div>
+      </section>
+
+      <!-- ================= 我的订单 ================= -->
+      <section class="screen" id="s-orders">
+        <div class="statusbar"><span>9:41</span><span class="right">5G ▮▮▮ ▮</span></div>
+        <header class="nav plain"><div class="nav-title">我的订单</div></header>
+        <div class="scroll">
+          <div id="ordersList" class="orders-list"></div>
+        </div>
+      </section>
+
+      <!-- ================= 我的 ================= -->
+      <section class="screen" id="s-mine">
+        <div class="statusbar"><span>9:41</span><span class="right">5G ▮▮▮ ▮</span></div>
+        <header class="nav plain"><div class="nav-title">我的</div></header>
+        <div class="scroll">
+          <div class="profile">
+            <div class="big-avatar">我</div>
+            <div><b>低保真用户</b><span>138****8000</span></div>
+          </div>
+          <div class="menu-list-simple">
+            <div class="menu-row">收货地址 <span>XX大学东门</span></div>
+            <div class="menu-row">优惠券 <span>满30减5 × 1</span></div>
+            <div class="menu-row">客服与帮助 <span>›</span></div>
+          </div>
+        </div>
+        <nav class="tabbar">
+          <button class="tab" data-go="home"><span class="ticon">▢</span>首页</button>
+          <button class="tab" data-go="orders"><span class="ticon">≡</span>订单</button>
+          <button class="tab active" data-go="mine"><span class="ticon">☺</span>我的</button>
+        </nav>
+      </section>
+
+    </div>
+    <div class="toast" id="toast"></div>
+  </div>
+</div>
+
+<script>
+(function(){
+  "use strict";
+
+  const $ = (sel, root) => (root || document).querySelector(sel);
+  const $$ = (sel, root) => Array.from((root || document).querySelectorAll(sel));
+  const yuan = n => '¥' + Number(n || 0).toFixed(2);
+
+  /* ---------- 数据（Axure 里对应中继器数据集） ---------- */
+  const STORES = [
+    { id: 1, name: '老王牛肉面', rating: 4.8, month: 1280, time: 25, min: 20, cat: '美食', desc: '牛肉面 · 拌面 · 小菜' },
+    { id: 2, name: '鲜果切水果店', rating: 4.6, month: 860, time: 22, min: 15, cat: '水果', desc: '现切果盘 · 酸奶捞' },
+    { id: 3, name: '好邻居便利超市', rating: 4.5, month: 2100, time: 35, min: 0, cat: '超市', desc: '零食 · 饮料 · 日用' },
+    { id: 4, name: '甜心烘焙坊', rating: 4.9, month: 430, time: 30, min: 25, cat: '甜点', desc: '蛋糕 · 欧包 · 咖啡' },
+    { id: 5, name: '川味小炒', rating: 4.3, month: 1500, time: 30, min: 18, cat: '美食', desc: '盖饭 · 小炒 · 汤' },
+    { id: 6, name: '每日鲜果', rating: 4.7, month: 990, time: 18, min: 12, cat: '水果', desc: '当季水果 · 果切' }
+  ];
+
+  const MENU = [
+    { id: 1, tag: '热销', name: '招牌牛肉面', desc: '大块牛肉 · 手工拉面', price: 22, sold: 320 },
+    { id: 2, tag: '热销', name: '酸辣粉', desc: '酸辣开胃 · 配花生碎', price: 14, sold: 210 },
+    { id: 3, tag: '主食', name: '红烧牛肉饭', desc: '牛腩 + 时蔬 + 米饭', price: 24, sold: 180 },
+    { id: 4, tag: '主食', name: '番茄鸡蛋面', desc: '番茄浓汤 · 手擀面', price: 18, sold: 150 },
+    { id: 5, tag: '小吃', name: '香酥鸡块', desc: '现炸 · 6 块装', price: 12, sold: 260 },
+    { id: 6, tag: '小吃', name: '凉拌黄瓜', desc: '清爽解腻', price: 8, sold: 90 },
+    { id: 7, tag: '饮料', name: '冰镇酸梅汤', desc: '500ml · 自制', price: 6, sold: 340 },
+    { id: 8, tag: '饮料', name: '现磨豆浆', desc: '无糖可选', price: 4, sold: 120 }
+  ];
+
+  const CATS = ['全部', '美食', '水果', '超市', '甜点'];
+  const MENU_TABS = ['全部', '热销', '主食', '小吃', '饮料'];
+  const SPECS = [
+    { label: '小份', delta: 0 },
+    { label: '大份', delta: 2 }
+  ];
+  const TOPPINGS = [
+    { label: '加蛋', delta: 2 },
+    { label: '加肠', delta: 3 },
+    { label: '加辣', delta: 0 }
+  ];
+
+  const S = {
+    cart: [],            // 全局变量：购物车明细
+    filter: '全部',      // 全局变量：FilterCat
+    sort: '综合排序',
+    menuTab: '全部',
+    q: '',
+    orderNo: '',
+    lastTotal: 0,
+    lastAddr: '',
+    lastCount: 0,
+    lastStatus: '商家备餐中',
+    currentStore: null,
+    spec: null,
+    cartOpen: false
+  };
+
+  const cartCount = () => S.cart.reduce((sum, line) => sum + line.qty, 0);
+  const cartTotal = () => S.cart.reduce((sum, line) => sum + line.unit * line.qty, 0);
+
+  /* ---------- Toast ---------- */
+  let toastTimer = null;
+  function toast(msg) {
+    const el = $('#toast');
+    el.textContent = msg;
+    el.classList.add('show');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => el.classList.remove('show'), 1900);
+  }
+
+  /* ---------- 页面切换 ---------- */
+  function nav(name) {
+    $$('.screen').forEach(screen => {
+      screen.classList.toggle('active', screen.id === 's-' + name);
+    });
+    const tabPages = ['home', 'orders', 'mine'];
+    $('#tabbar').style.display = tabPages.includes(name) ? 'flex' : 'none';
+    $$('.tab').forEach(t => t.classList.toggle('active', t.dataset.go === name));
+    const active = $('#s-' + name);
+    if (active) {
+      const scroller = $('.scroll', active);
+      if (scroller) scroller.scrollTop = 0;
+    }
+    if (name === 'orders') renderOrders();
+    if (name === 'checkout') updateCheckout();
+    updateMonitor();
+  }
+
+  /* ---------- 首页：分类 ---------- */
+  function renderCats() {
+    $('#cats').innerHTML = CATS.map(cat => `
+      <button class="cat ${cat === S.filter ? 'on' : ''}" data-cat="${cat}">
+        <span class="cat-icon">${cat.slice(0, 1)}</span>
+        <span class="cat-label">${cat}</span>
+      </button>
+    `).join('');
+  }
+
+  /* ---------- 首页：店铺中继器 ---------- */
+  function renderStores() {
+    let list = STORES.filter(store => S.filter === '全部' || store.cat === S.filter);
+    if (S.q) {
+      const q = S.q.toLowerCase();
+      list = list.filter(store =>
+        store.name.toLowerCase().includes(q) || store.desc.toLowerCase().includes(q)
+      );
+    }
+    if (S.sort === '评分最高') list = list.slice().sort((a, b) => b.rating - a.rating);
+    if (S.sort === '配送最快') list = list.slice().sort((a, b) => a.time - b.time);
+
+    const box = $('#storeList');
+    if (!list.length) {
+      box.innerHTML = '<div class="empty">该分类暂无店铺</div>';
+      return;
+    }
+    box.innerHTML = list.map(store => `
+      <button class="store-card" data-store="${store.id}">
+        <div class="store-img ph">店招</div>
+        <div class="store-info">
+          <div class="store-name">${store.name}</div>
+          <div class="store-line"><span class="rating">${store.rating.toFixed(1)}</span> 分 · 月售 ${store.month}</div>
+          <div class="store-line">${store.desc}</div>
+          <div class="store-line muted">约 ${store.time} 分钟 · 起送 ${yuan(store.min)}</div>
+        </div>
+        ${store.rating >= 4.8 ? '<span class="tag">人气</span>' : ''}
+      </button>
+    `).join('');
+  }
+
+  /* ---------- 店铺页 ---------- */
+  function openStore(id) {
+    const store = STORES.find(item => item.id === Number(id));
+    if (!store) return;
+    S.currentStore = store;
+    S.menuTab = '全部';
+
+    $('#storeName').textContent = store.name;
+    $('#storeName2').textContent = store.name;
+    $('#storeRating').textContent = store.rating.toFixed(1) + ' 分';
+    $('#storeMonth').textContent = '月售 ' + store.month;
+    $('#storeTime').textContent = '约 ' + store.time + ' 分钟';
+    $('#storeMin').textContent = '起送 ' + yuan(store.min);
+    $('#storeStars').textContent = '★★★★★';
+
+    renderMenuTabs();
+    renderMenu();
+    nav('store');
+  }
+
+  function renderMenuTabs() {
+    $('#menuTabs').innerHTML = MENU_TABS.map(tab => `
+      <button class="menu-tab ${tab === S.menuTab ? 'on' : ''}" data-tab="${tab}">${tab}</button>
+    `).join('');
+  }
+
+  function renderMenu() {
+    const items = MENU.filter(item => S.menuTab === '全部' || item.tag === S.menuTab);
+    $('#menuList').innerHTML = items.map(item => `
+      <button class="menu-item" data-item="${item.id}">
+        <div class="menu-img ph">菜品</div>
+        <div class="menu-info">
+          <div class="menu-name">${item.name}</div>
+          <div class="menu-desc">${item.desc}</div>
+          <div class="menu-sold">月售 ${item.sold}</div>
+          <div class="menu-price-row">
+            <span class="price">${yuan(item.price)}</span>
+            <span class="plus">+</span>
+          </div>
+        </div>
+      </button>
+    `).join('');
+  }
+
+  /* ---------- 规格弹层（单选 / 复选 / 数量 / 表达式） ---------- */
+  function openSpec(item) {
+    S.spec = { item, specIdx: 0, opts: new Set(), qty: 1 };
+    $('#specName').textContent = item.name;
+    $('#specDesc').textContent = item.desc + ' · 月售 ' + item.sold;
+
+    $('#specOpts').innerHTML = SPECS.map((spec, index) => `
+      <button class="pill ${index === 0 ? 'on' : ''}" data-spec="${index}">
+        ${spec.label}${spec.delta ? ' +¥' + spec.delta : ''}
+      </button>
+    `).join('');
+
+    $('#toppingOpts').innerHTML = TOPPINGS.map((top, index) => `
+      <button class="pill" data-top="${index}">
+        ${top.label}${top.delta ? ' +¥' + top.delta : ''}
+      </button>
+    `).join('');
+
+    $('#qty').value = 1;
+    updateSpecTotal();
+    $('#specMask').classList.add('show');
+  }
+
+  function specUnit() {
+    const s = S.spec;
+    let unit = s.item.price + SPECS[s.specIdx].delta;
+    s.opts.forEach(index => { unit += TOPPINGS[index].delta; });
+    return unit;
+  }
+
+  function updateSpecTotal() {
+    $('#specTotal').textContent = (specUnit() * S.spec.qty).toFixed(2);
+  }
+
+  function closeSpec() {
+    $('#specMask').classList.remove('show');
+    S.spec = null;
+  }
+
+  function addToCart() {
+    const s = S.spec;
+    if (!s) return;
+    const labels = Array.from(s.opts).sort((a, b) => a - b).map(i => TOPPINGS[i].label);
+    const key = s.item.id + '-' + s.specIdx + '-' + Array.from(s.opts).sort((a, b) => a - b).join('_');
+    const unit = specUnit();
+    const existing = S.cart.find(line => line.key === key);
+    if (existing) {
+      existing.qty += s.qty;
+    } else {
+      S.cart.push({
+        key,
+        name: s.item.name,
+        unit,
+        qty: s.qty,
+        specLabel: SPECS[s.specIdx].label,
+        opts: labels
+      });
+    }
+    closeSpec();
+    renderCart();
+    toast('已加入购物车：' + s.item.name + ' ×' + s.qty);
+  }
+
+  /* ---------- 购物车 ---------- */
+  function renderCart() {
+    const count = cartCount();
+    const total = cartTotal();
+
+    $('#cartCount').textContent = count;
+    $('#cartTotal').textContent = yuan(total);
+    $('#cartTip').textContent = count ? '已选 ' + count + ' 件' : '未选购商品';
+    $('#goCheckout').classList.toggle('disabled', count === 0);
+
+    const list = $('#drawerList');
+    if (!S.cart.length) {
+      list.innerHTML = '<div class="empty">购物车还是空的</div>';
+      S.cartOpen = false;
+      $('#cartDrawer').classList.remove('open');
+    } else {
+      list.innerHTML = S.cart.map(line => `
+        <div class="drawer-item">
+          <div class="di-info">
+            <div class="di-name">${line.name}</div>
+            <div class="di-spec">${[line.specLabel].concat(line.opts).join(' / ')}</div>
+          </div>
+          <div class="di-price">${yuan(line.unit * line.qty)}</div>
+          <div class="qty-mini">
+            <button data-dec="${line.key}">−</button>
+            <span>${line.qty}</span>
+            <button data-inc="${line.key}">＋</button>
+          </div>
+        </div>
+      `).join('');
+      $('#cartDrawer').classList.toggle('open', S.cartOpen);
+    }
+    updateMonitor();
+  }
+
+  function changeQty(key, delta) {
+    const line = S.cart.find(item => item.key === key);
+    if (!line) return;
+    line.qty += delta;
+    if (line.qty <= 0) {
+      S.cart = S.cart.filter(item => item.key !== key);
+    }
+    renderCart();
+    if ($('#s-checkout').classList.contains('active')) updateCheckout();
+  }
+
+  /* ---------- 订单确认：费用表达式 ---------- */
+  function calcFees() {
+    const goods = cartTotal();
+    const discount = goods >= 30 ? 5 : 0;
+    const delivery = goods >= 30 ? 0 : 3;
+    return { goods, discount, delivery, total: goods - discount + delivery };
+  }
+
+  function updateCheckout() {
+    const fees = calcFees();
+    $('#feeGoods').textContent = yuan(fees.goods);
+    $('#feeDiscount').textContent = fees.discount ? '-¥5.00' : '¥0.00';
+    $('#feeDelivery').textContent = yuan(fees.delivery);
+    $('#feeTotal').textContent = yuan(fees.total);
+    $('#feeTip').textContent = fees.goods >= 30
+      ? '已满 30 元：减 5 元，免配送费'
+      : '再买 ' + yuan(Math.max(0, 30 - fees.goods)) + ' 可享满 30 减 5 且免配送费';
+    updateMonitor();
+  }
+
+  /* ---------- 订单 / 我的 ---------- */
+  function renderOrders() {
+    const box = $('#ordersList');
+    if (!S.orderNo) {
+      box.innerHTML = '<div class="empty">暂无订单，去首页点一单吧</div>';
+      return;
+    }
+    box.innerHTML = `
+      <div class="order-card">
+        <div class="order-head">
+          <span class="muted">订单号 ${S.orderNo}</span>
+          <span class="order-state">${S.lastStatus}</span>
+        </div>
+        <div class="order-shop">${S.currentStore ? S.currentStore.name : '老王牛肉面'}</div>
+        <div class="order-line">共 ${S.lastCount} 件商品 · 实付 <b>${yuan(S.lastTotal)}</b></div>
+        <div class="order-addr muted">${S.lastAddr}</div>
+      </div>
+    `;
+  }
+
+  /* ---------- 变量监视器 ---------- */
+  function updateMonitor() {
+    const fees = calcFees();
+    $('#mCount').textContent = cartCount();
+    $('#mTotal').textContent = yuan(fees.goods);
+    $('#mFilter').textContent = S.filter;
+    $('#mDiscount').textContent = fees.goods >= 30 ? '-¥5.00' : '¥0.00';
+    $('#mDelivery').textContent = fees.goods > 0 ? yuan(fees.delivery) : '¥0.00';
+    $('#mPayable').textContent = yuan(fees.goods > 0 ? fees.total : 0);
+    $('#mOrder').textContent = S.orderNo || '—';
+  }
+
+  /* ---------- 提交订单（情形交互 / 校验） ---------- */
+  function submitOrder() {
+    if (cartCount() === 0) {
+      toast('购物车是空的，先选点吃的吧');
+      return;
+    }
+
+    const name = $('#fName').value.trim();
+    const phone = $('#fPhone').value.trim();
+    const addr = $('#fAddr').value;
+    const detail = $('#fDetail').value.trim();
+    const payInput = document.querySelector('input[name="pay"]:checked');
+    const pay = payInput ? payInput.value : '';
+
+    const errors = [];
+    if (!name) errors.push('请填写收货人姓名');
+    if (!/^1\d{10}$/.test(phone)) errors.push('手机号需为 11 位数字');
+    if (!addr) errors.push('请选择收货地址');
+    if (addr.indexOf('校外') !== -1) errors.push('该地址超出配送范围');
+    if (!pay) errors.push('请选择支付方式');
+
+    const errBox = $('#formErr');
+    if (errors.length) {
+      errBox.textContent = errors.join('；');
+      errBox.classList.add('show');
+      toast(errors[0]);
+      return;
+    }
+    errBox.classList.remove('show');
+    errBox.textContent = '';
+
+    const fees = calcFees();
+    S.orderNo = 'WM' + (Math.floor(Math.random() * 9000) + 1000);
+    S.lastTotal = fees.total;
+    S.lastAddr = addr + (detail ? ' ' + detail : '');
+    S.lastCount = cartCount();
+
+    $('#successNo').textContent = S.orderNo;
+    $('#successAmount').textContent = yuan(fees.total);
+    $('#successAddr').textContent = S.lastAddr;
+    $('#successSub').textContent = '支付成功（' + pay + '），商家正在备餐';
+
+    S.cart = [];
+    S.cartOpen = false;
+    renderCart();
+    renderOrders();
+    nav('success');
+  }
+
+  /* ---------- 内联框架内容（占位地图） ---------- */
+  function initMapFrame() {
+    const doc = `<!DOCTYPE html><html><head><meta charset="utf-8"><style>
+      html,body{margin:0;height:100%;font-family:-apple-system,"Microsoft YaHei",sans-serif;background:#fafaf7;color:#777}
+      .map{position:relative;height:100%;background:
+        repeating-linear-gradient(0deg,transparent 0 32px,#e6e6e2 32px 33px),
+        repeating-linear-gradient(90deg,transparent 0 56px,#e6e6e2 56px 57px)}
+      .road{position:absolute;left:0;right:0;top:56%;height:12px;background:#e0e0dc}
+      .pin{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:58px;height:58px;border:2px dashed #999;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10.5px;color:#666;background:rgba(255,255,255,.7);text-align:center;line-height:1.35}
+      .tag{position:absolute;left:8px;top:8px;font-size:10px;color:#888;background:#fff;border:1px solid #ddd;border-radius:3px;padding:1px 5px}
+      .scale{position:absolute;right:8px;bottom:6px;font-size:9px;color:#aaa}
+    </style></head><body>
+      <div class="map">
+        <div class="road"></div>
+        <div class="pin">XX大学<br>东门</div>
+        <div class="tag">配送范围示意 · 3km</div>
+        <div class="scale">— 500m</div>
+      </div>
+    </body></html>`;
+    $('#mapFrame').srcdoc = doc;
+  }
+
+  /* ---------- 轮播 ---------- */
+  let slideIndex = 0;
+  const slideCount = 3;
+  let carouselTimer = null;
+
+  function goSlide(next) {
+    slideIndex = (next + slideCount) % slideCount;
+    $('#slides').style.transform = 'translateX(-' + (slideIndex * 100) + '%)';
+    $$('#dots .dot').forEach((dot, index) => {
+      dot.classList.toggle('on', index === slideIndex);
+    });
+  }
+
+  function initCarousel() {
+    $('#dots').innerHTML = Array.from({ length: slideCount }, (_, index) =>
+      '<button class="dot ' + (index === 0 ? 'on' : '') + '" data-slide="' + index + '" aria-label="第' + (index + 1) + '张"></button>'
+    ).join('');
+
+    carouselTimer = setInterval(() => goSlide(slideIndex + 1), 3000);
+    goSlide(0);
+  }
+
+  /* ---------- 事件绑定 ---------- */
+  function bindEvents() {
+    // 知识点标注开关
+    $('#kpToggle').addEventListener('change', event => {
+      document.body.classList.toggle('show-kp', event.target.checked);
+    });
+
+    // 底部标签 & 返回
+    document.addEventListener('click', event => {
+      const tab = event.target.closest('[data-go]');
+      if (tab) { nav(tab.dataset.go); return; }
+      const back = event.target.closest('[data-back]');
+      if (back) { nav(back.dataset.back); return; }
+    });
+
+    // 分类
+    $('#cats').addEventListener('click', event => {
+      const btn = event.target.closest('[data-cat]');
+      if (!btn) return;
+      S.filter = btn.dataset.cat;
+      renderCats();
+      renderStores();
+      toast('筛选分类：' + S.filter);
+    });
+
+    // 排序下拉
+    $('#sortSelect').addEventListener('change', event => {
+      S.sort = event.target.value;
+      renderStores();
+    });
+
+    // 搜索
+    $('#searchInput').addEventListener('input', event => {
+      S.q = event.target.value.trim();
+      renderStores();
+    });
+    $('#searchBtn').addEventListener('click', () => {
+      toast(S.q ? '搜索：' + S.q : '显示全部店铺');
+    });
+
+    // 热区
+    $('#hotspot').addEventListener('click', () => {
+      toast('已领取红包：满 30 减 5（热区点击）');
+    });
+
+    // 轮播箭头 / 圆点
+    $('#cPrev').addEventListener('click', event => {
+      event.stopPropagation();
+      goSlide(slideIndex - 1);
+    });
+    $('#cNext').addEventListener('click', event => {
+      event.stopPropagation();
+      goSlide(slideIndex + 1);
+    });
+    $('#dots').addEventListener('click', event => {
+      const dot = event.target.closest('[data-slide]');
+      if (!dot) return;
+      event.stopPropagation();
+      goSlide(Number(dot.dataset.slide));
+    });
+
+    // 店铺列表（中继器）
+    $('#storeList').addEventListener('click', event => {
+      const card = event.target.closest('[data-store]');
+      if (card) openStore(card.dataset.store);
+    });
+
+    // 商品分类 tab
+    $('#menuTabs').addEventListener('click', event => {
+      const tab = event.target.closest('[data-tab]');
+      if (!tab) return;
+      S.menuTab = tab.dataset.tab;
+      renderMenuTabs();
+      renderMenu();
+    });
+
+    // 商品点击 -> 规格弹层
+    $('#menuList').addEventListener('click', event => {
+      const item = event.target.closest('[data-item]');
+      if (!item) return;
+      const dish = MENU.find(d => d.id === Number(item.dataset.item));
+      if (dish) openSpec(dish);
+    });
+
+    // 规格弹层
+    $('#specOpts').addEventListener('click', event => {
+      const btn = event.target.closest('[data-spec]');
+      if (!btn || !S.spec) return;
+      S.spec.specIdx = Number(btn.dataset.spec);
+      $$('#specOpts .pill').forEach((pill, index) => pill.classList.toggle('on', index === S.spec.specIdx));
+      updateSpecTotal();
+    });
+
+    $('#toppingOpts').addEventListener('click', event => {
+      const btn = event.target.closest('[data-top]');
+      if (!btn || !S.spec) return;
+      const index = Number(btn.dataset.top);
+      if (S.spec.opts.has(index)) S.spec.opts.delete(index);
+      else S.spec.opts.add(index);
+      btn.classList.toggle('on', S.spec.opts.has(index));
+      updateSpecTotal();
+    });
+
+    $('#qMinus').addEventListener('click', () => {
+      if (!S.spec) return;
+      S.spec.qty = Math.max(1, S.spec.qty - 1);
+      $('#qty').value = S.spec.qty;
+      updateSpecTotal();
+    });
+    $('#qPlus').addEventListener('click', () => {
+      if (!S.spec) return;
+      S.spec.qty = Math.min(20, S.spec.qty + 1);
+      $('#qty').value = S.spec.qty;
+      updateSpecTotal();
+    });
+
+    $('#addCart').addEventListener('click', addToCart);
+    $('#specClose').addEventListener('click', closeSpec);
+    $('#specMask').addEventListener('click', event => {
+      if (event.target === $('#specMask')) closeSpec();
+    });
+
+    // 购物车抽屉
+    $('#cartToggle').addEventListener('click', () => {
+      if (cartCount() === 0) { toast('还没有选择商品'); return; }
+      S.cartOpen = !S.cartOpen;
+      $('#cartDrawer').classList.toggle('open', S.cartOpen);
+    });
+
+    $('#drawerList').addEventListener('click', event => {
+      const inc = event.target.closest('[data-inc]');
+      const dec = event.target.closest('[data-dec]');
+      if (inc) changeQty(inc.dataset.inc, 1);
+      if (dec) changeQty(dec.dataset.dec, -1);
+    });
+
+    $('#clearCart').addEventListener('click', () => {
+      if (!S.cart.length) return;
+      S.cart = [];
+      S.cartOpen = false;
+      renderCart();
+      toast('购物车已清空');
+    });
+
+    $('#goCheckout').addEventListener('click', () => {
+      if (cartCount() === 0) { toast('购物车是空的，先选点吃的吧'); return; }
+      nav('checkout');
+    });
+
+    // 支付方式 / 餐具
+    $$('input[name="pay"]').forEach(radio => {
+      radio.addEventListener('change', () => toast('已选择：' + radio.value));
+    });
+    $('#fTableware').addEventListener('change', event => {
+      toast(event.target.checked ? '需要餐具' : '不需要餐具');
+    });
+
+    // 提交订单
+    $('#submitOrder').addEventListener('click', submitOrder);
+    $('#backHome').addEventListener('click', () => nav('home'));
+
+    // 订单页 tab
+    document.addEventListener('keydown', event => {
+      if (event.key === 'Escape') closeSpec();
+    });
+  }
+
+  /* ---------- 启动 ---------- */
+  function init() {
+    renderCats();
+    renderStores();
+    initCarousel();
+    renderMenuTabs();
+    renderMenu();
+    renderCart();
+    renderOrders();
+    initMapFrame();
+    bindEvents();
+    updateMonitor();
+  }
+
+  init();
+})();
+</script>
+</body>
+</html>
